@@ -10,13 +10,12 @@ Este módulo coordina:
 5. La detección de cruces en la proyección.
 6. La visualización de la curva y su diagrama proyectado.
 7. La ejecución del experimento estadístico.
+8. El registro de los resultados experimentales.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-from pathlib import Path
 
 from .configuracion import Configuracion
 from .cruces import detectar_cruces
@@ -27,13 +26,17 @@ from .generador import (
     validar_poligono,
 )
 from .proyeccion import proyectar
+from .resultados import (
+    crear_resultado_experimento,
+    guardar_experimento,
+)
 from .visualizacion import (
     mostrar_poligono,
     mostrar_proyeccion,
 )
 
 
-def construir_parser():
+def construir_parser() -> argparse.ArgumentParser:
     """
     Construye el parser de argumentos de línea de comandos.
 
@@ -97,10 +100,10 @@ def construir_parser():
     parser.add_argument(
         "--guardar",
         type=str,
-        default="",
+        default="resultados",
         help=(
-            "Ruta donde se guardará el resultado "
-            "en formato JSON."
+            "Directorio donde se guardarán los "
+            "resultados JSON y CSV."
         ),
     )
 
@@ -157,8 +160,9 @@ def analizar_primera_muestra(
     """
     Genera y analiza una primera muestra.
 
-    Esta función se utiliza para inspeccionar visualmente el objeto
-    antes de ejecutar el experimento estadístico completo.
+    Esta función se utiliza para inspeccionar visualmente
+    el objeto antes de ejecutar el experimento estadístico
+    completo.
 
     El flujo es:
 
@@ -173,7 +177,6 @@ def analizar_primera_muestra(
         visualización
     """
 
-    # Inicializamos la aleatoriedad.
     inicializar_aleatoriedad(
         configuracion.semilla
     )
@@ -244,7 +247,10 @@ def analizar_primera_muestra(
 
     print()
 
-    # Si la geometría no es válida, detenemos el análisis.
+    # ----------------------------------------------------------
+    # VALIDACIÓN
+    # ----------------------------------------------------------
+
     if not validacion["forma_correcta"]:
         raise RuntimeError(
             "La estructura generada no tiene "
@@ -436,35 +442,51 @@ def mostrar_distribucion(
         )
 
 
-def guardar_resultado(
+def registrar_resultado(
     resultado: dict,
-    ruta_archivo: str,
+    configuracion: Configuracion,
+    directorio: str,
 ) -> None:
     """
-    Guarda el resultado completo del experimento como JSON.
+    Convierte y guarda el resultado del experimento.
+
+    Se generan dos archivos:
+
+    - JSON: información completa del experimento.
+    - CSV: distribución experimental.
     """
 
-    ruta = Path(
-        ruta_archivo
-    )
+    clasificaciones = [
+        muestra["tipo_nudo"]
+        for muestra in resultado["muestras"]
+    ]
 
-    ruta.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    ruta.write_text(
-        json.dumps(
-            resultado,
-            indent=2,
-            ensure_ascii=False,
+    resultado_archivo = crear_resultado_experimento(
+        segmentos=configuracion.numero_segmentos,
+        muestras=configuracion.numero_muestras,
+        longitud_segmento=(
+            configuracion.longitud_segmento
         ),
-        encoding="utf-8",
+        semilla=configuracion.semilla,
+        max_cross=configuracion.max_cross,
+        clasificaciones=clasificaciones,
+    )
+
+    ruta_json, ruta_csv = guardar_experimento(
+        resultado_archivo,
+        directorio=directorio,
     )
 
     print()
+    print("=" * 60)
+    print("RESULTADOS REGISTRADOS")
+    print("=" * 60)
+    print()
     print(
-        f"Resultado guardado en: {ruta}"
+        f"JSON: {ruta_json}"
+    )
+    print(
+        f"CSV:  {ruta_csv}"
     )
 
 
@@ -519,7 +541,7 @@ def main() -> None:
     )
 
     # ----------------------------------------------------------
-    # RESULTADOS
+    # RESULTADOS EN TERMINAL
     # ----------------------------------------------------------
 
     mostrar_distribucion(
@@ -527,15 +549,14 @@ def main() -> None:
     )
 
     # ----------------------------------------------------------
-    # GUARDADO OPCIONAL
+    # REGISTRO DEL EXPERIMENTO
     # ----------------------------------------------------------
 
-    if argumentos.guardar:
-
-        guardar_resultado(
-            resultado,
-            argumentos.guardar,
-        )
+    registrar_resultado(
+        resultado,
+        configuracion,
+        argumentos.guardar,
+    )
 
 
 if __name__ == "__main__":

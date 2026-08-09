@@ -27,7 +27,7 @@ def ejecutar_experimento(
     - configuración;
     - número de apariciones de cada tipo;
     - probabilidades experimentales;
-    - información de cada muestra.
+    - clasificación de cada muestra.
     """
 
     configuracion.validar()
@@ -37,6 +37,7 @@ def ejecutar_experimento(
     )
 
     conteos = Counter()
+    clasificaciones = []
     muestras = []
 
     for indice in range(
@@ -76,6 +77,7 @@ def ejecutar_experimento(
         tipo_texto = str(tipo)
 
         conteos[tipo_texto] += 1
+        clasificaciones.append(tipo_texto)
 
         muestras.append(
             {
@@ -103,5 +105,6 @@ def ejecutar_experimento(
         ),
         "conteos": dict(conteos),
         "probabilidades": probabilidades,
+        "clasificaciones": clasificaciones,
         "muestras": muestras,
     }
