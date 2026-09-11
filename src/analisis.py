@@ -88,6 +88,47 @@ def listar_resultados(
     )
 
 
+def calcular_coincidencia(
+    distribucion_n: dict[str, float],
+    distribucion_m: dict[str, float],
+) -> float:
+    """
+    Calcula la probabilidad de coincidencia / equivalencia entre dos
+    distribuciones de nudos p_N(K) y p_M(K):
+
+        C_(N, M) = Σ p_N(K) * p_M(K)
+
+    Si ambas distribuciones corresponden al mismo número de segmentos (N = M),
+    se obtiene C_(N, N) = Σ p_N(K)².
+    """
+
+    tipos_comunes = set(distribucion_n.keys()).intersection(
+        distribucion_m.keys()
+    )
+
+    return float(
+        sum(
+            distribucion_n[tipo] * distribucion_m[tipo]
+            for tipo in tipos_comunes
+        )
+    )
+
+
+def calcular_coincidencia_experimentos(
+    resultado_n: dict,
+    resultado_m: dict,
+) -> float:
+    """
+    Extrae las distribuciones de dos experimentos y calcula su
+    probabilidad de coincidencia C_(N, M).
+    """
+
+    dist_n = extraer_distribucion(resultado_n)
+    dist_m = extraer_distribucion(resultado_m)
+
+    return calcular_coincidencia(dist_n, dist_m)
+
+
 def extraer_distribucion(
     resultado: dict,
 ) -> dict[str, float]:

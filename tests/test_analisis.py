@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 
 from src.analisis import (
+    calcular_coincidencia,
+    calcular_coincidencia_experimentos,
     cargar_resultado,
     comparar_distribuciones,
     extraer_configuracion,
@@ -410,3 +412,40 @@ def test_graficar_evolucion_sin_datos() -> None:
         [],
         "0_1",
     )
+
+
+def test_calcular_coincidencia_mismo_n() -> None:
+    dist_n = {"0_1": 0.8, "3_1": 0.2}
+    # C(N,N) = 0.8*0.8 + 0.2*0.2 = 0.64 + 0.04 = 0.68
+    coincidencia = calcular_coincidencia(dist_n, dist_n)
+    assert pytest.approx(coincidencia) == 0.68
+
+
+def test_calcular_coincidencia_diferente_n_m() -> None:
+    dist_n = {"0_1": 0.8, "3_1": 0.2}
+    dist_m = {"0_1": 0.5, "3_1": 0.3, "4_1": 0.2}
+    # C(N,M) = 0.8*0.5 + 0.2*0.3 = 0.40 + 0.06 = 0.46
+    coincidencia = calcular_coincidencia(dist_n, dist_m)
+    assert pytest.approx(coincidencia) == 0.46
+
+
+def test_calcular_coincidencia_experimentos() -> None:
+    exp_n = {
+        "resultado": {
+            "distribucion": {
+                "0_1": {"cantidad": 80, "frecuencia": 0.8},
+                "3_1": {"cantidad": 20, "frecuencia": 0.2},
+            }
+        }
+    }
+    exp_m = {
+        "resultado": {
+            "distribucion": {
+                "0_1": {"cantidad": 50, "frecuencia": 0.5},
+                "3_1": {"cantidad": 30, "frecuencia": 0.3},
+                "4_1": {"cantidad": 20, "frecuencia": 0.2},
+            }
+        }
+    }
+    coincidencia = calcular_coincidencia_experimentos(exp_n, exp_m)
+    assert pytest.approx(coincidencia) == 0.46
